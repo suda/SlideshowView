@@ -18,6 +18,7 @@
 */
 
 #import <UIKit/UIKit.h>
+#import <QuartzCore/QuartzCore.h>
 
 @interface SlideshowView : UIView {
     int currentStep;
@@ -30,6 +31,7 @@
 @property (nonatomic, assign) BOOL isAnimating;
 @property (nonatomic, strong) NSMutableArray *images;
 
-- (void)animate;
+- (void)pause;
+- (void)resume;
 
 @end

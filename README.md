@@ -24,7 +24,7 @@ Usage
 Todo
 ----
 * Different directions of animation
-* Play/Pause/Stop
+* Restarting animation
 
 LICENCE
 -------

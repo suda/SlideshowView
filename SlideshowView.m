@@ -27,7 +27,7 @@
 {
     self = [super initWithFrame:frame];
     if (self) {
-        animationPace = 30.0;
+        animationPace = 20.0;
         fadeDuration = 1;
         currentStep = -1;
         animationCurve = UIViewAnimationCurveLinear;
@@ -36,6 +36,30 @@
         imageViews = [NSMutableArray new];
     }
     return self;
+}
+
+- (void)animate {
+    if (!self.isAnimating) return;
+    
+    UIImage *image = [images objectAtIndex:currentStep];
+    UIImageView *iv = [imageViews objectAtIndex:currentStep];
+    
+    CGFloat ratio = self.frame.size.height / image.size.height;
+    CGRect frame = CGRectMake(-((image.size.width * ratio) - self.frame.size.width), 0, image.size.width * ratio, self.frame.size.height);
+    
+    iv.frame = frame;
+    iv.hidden = NO;
+    iv.alpha = 1;
+    
+    [UIView beginAnimations:[NSString stringWithFormat:@"scroll_%i", currentStep] context:nil];
+    [UIView setAnimationDelegate:self];
+    [UIView setAnimationDidStopSelector:@selector(scrollDone)];
+    [UIView setAnimationDuration:((-frame.origin.x) / self.animationPace)];
+    [UIView setAnimationCurve:self.animationCurve];
+    [UIView setAnimationBeginsFromCurrentState:NO];
+    frame.origin.x = -(animationPace * fadeDuration);
+    [iv setFrame:frame];
+    [UIView commitAnimations];
 }
 
 - (void)setImages:(NSArray *)_images {
@@ -64,29 +88,9 @@
     }
 }
 
-- (void)animate {
-    UIImage *image = [images objectAtIndex:currentStep];
-    UIImageView *iv = [imageViews objectAtIndex:currentStep];
-    
-    CGFloat ratio = self.frame.size.height / image.size.height;
-    CGRect frame = CGRectMake(-((image.size.width * ratio) - self.frame.size.width), 0, image.size.width * ratio, self.frame.size.height);
-    NSLog(@"%f %f %f %f", frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
-    iv.frame = frame;
-    iv.hidden = NO;
-    iv.alpha = 1;
-    
-    [UIView beginAnimations:[NSString stringWithFormat:@"scroll_%i", currentStep] context:nil];
-    [UIView setAnimationDelegate:self];
-    [UIView setAnimationDidStopSelector:@selector(scrollDone)];
-    [UIView setAnimationDuration:((-frame.origin.x) / self.animationPace)];
-    [UIView setAnimationCurve:self.animationCurve];
-    [UIView setAnimationBeginsFromCurrentState:NO];
-    frame.origin.x = -(animationPace * fadeDuration);
-    [iv setFrame:frame];
-    [UIView commitAnimations];
-}
-
 - (void)scrollDone {
+    if (!self.isAnimating) return;
+
     UIImageView *iv = [imageViews objectAtIndex:currentStep];
     [self bringSubviewToFront:iv];
 
@@ -102,6 +106,35 @@
     
     currentStep = currentStep < [images count] - 1 ? currentStep + 1 : 0;
     [self animate];
+}
+
+- (void)pauseLayer:(CALayer*)layer {
+    CFTimeInterval paused_time = [layer convertTime:CACurrentMediaTime() fromLayer:nil];
+    layer.speed = 0.0;
+    layer.timeOffset = paused_time;
+    isAnimating = NO;
+}
+
+- (void)resumeLayer:(CALayer*)layer {
+    CFTimeInterval paused_time = [layer timeOffset];
+    layer.speed = 1.0f;
+    layer.timeOffset = 0.0f;
+    layer.beginTime = 0.0f;
+    CFTimeInterval time_since_pause = [layer convertTime:CACurrentMediaTime() fromLayer:nil] - paused_time;
+    layer.beginTime = time_since_pause;
+    isAnimating = YES;
+}
+
+- (void)pause {
+    UIImageView *iv = [imageViews objectAtIndex:currentStep];
+    [self pauseLayer:iv.layer];
+}
+
+- (void)resume {
+    if (self.isAnimating) return;
+    
+    UIImageView *iv = [imageViews objectAtIndex:currentStep];
+    [self resumeLayer:iv.layer];
 }
 
 @end
