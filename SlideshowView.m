@@ -30,10 +30,16 @@
         animationPace = 20.0;
         fadeDuration = 1;
         currentStep = -1;
+        previousStep = -1;
         animationCurve = UIViewAnimationCurveLinear;
         
         images = [NSMutableArray new];
-        imageViews = [NSMutableArray new];
+        firstIv = [UIImageView new];
+        [self addSubview:firstIv];
+        secondIv = [UIImageView new];        
+        [self addSubview:secondIv];
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didRotate:)name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
     }
     return self;
 }
@@ -41,8 +47,9 @@
 - (void)animate {
     if (!self.isAnimating) return;
     
-    UIImage *image = [images objectAtIndex:currentStep];
-    UIImageView *iv = [imageViews objectAtIndex:currentStep];
+    UIImage *image = [UIImage imageNamed:[images objectAtIndex:currentStep]];
+    UIImageView *iv = (currentStep % 2) == 0 ? firstIv : secondIv;
+    [iv setImage:image];
     
     CGFloat ratio = self.frame.size.height / image.size.height;
     CGRect frame = CGRectMake(-((image.size.width * ratio) - self.frame.size.width), 0, image.size.width * ratio, self.frame.size.height);
@@ -62,38 +69,12 @@
     [UIView commitAnimations];
 }
 
-- (void)setImages:(NSArray *)_images {
-    for (UIImageView *iv in imageViews) {
-        [iv removeFromSuperview];
-    }
-    [imageViews removeAllObjects];
-    [images removeAllObjects];
-    
-    int i = 0;
-    for (UIImage *image in _images) {
-        UIImageView *iv = [[UIImageView alloc] initWithImage:image];
-        iv.hidden = YES;
-        iv.contentMode = UIViewContentModeScaleAspectFill;
-        [images addObject:image];
-        [imageViews addObject:iv];
-        
-        [self addSubview:iv];
-        i++;
-    }
-
-    if ([images count] > 0) {
-        currentStep = 0;
-        isAnimating = YES;
-        [self animate];
-    }
-}
-
 - (void)scrollDone {
     if (!self.isAnimating) return;
-
-    UIImageView *iv = [imageViews objectAtIndex:currentStep];
+    
+    UIImageView *iv = (currentStep % 2) == 0 ? firstIv : secondIv;
     [self bringSubviewToFront:iv];
-
+    
     CGRect frame = iv.frame;
     [UIView beginAnimations:[NSString stringWithFormat:@"fade_%i", currentStep] context:nil];
     [UIView setAnimationDuration:fadeDuration];
@@ -104,8 +85,27 @@
     [iv setAlpha:0];
     [UIView commitAnimations];
     
+    previousStep = currentStep;
     currentStep = currentStep < [images count] - 1 ? currentStep + 1 : 0;
     [self animate];
+}
+
+- (void)setImages:(NSArray *)_images {
+    images = _images;
+    [firstIv setImage:nil];
+    [secondIv setImage:nil];
+
+    if ([images count] > 0) {
+        currentStep = 0;
+        isAnimating = YES;
+        [self animate];
+    }
+}
+
+- (void)didRotate:(NSNotification *)notification {
+    for (CALayer* layer in [self.layer sublayers]) {
+        [layer removeAllAnimations];
+    }
 }
 
 - (void)pauseLayer:(CALayer*)layer {
@@ -126,15 +126,15 @@
 }
 
 - (void)pause {
-    UIImageView *iv = [imageViews objectAtIndex:currentStep];
-    [self pauseLayer:iv.layer];
+    [self pauseLayer:[firstIv layer]];
+    [self pauseLayer:[secondIv layer]];
 }
 
 - (void)resume {
     if (self.isAnimating) return;
     
-    UIImageView *iv = [imageViews objectAtIndex:currentStep];
-    [self resumeLayer:iv.layer];
+    [self resumeLayer:[firstIv layer]];
+    [self resumeLayer:[secondIv layer]];
 }
 
 @end

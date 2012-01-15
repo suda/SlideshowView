@@ -22,14 +22,16 @@
 
 @interface SlideshowView : UIView {
     int currentStep;
-    NSMutableArray *imageViews;
+    int previousStep;    
+    UIImageView *firstIv;
+    UIImageView *secondIv;
 }
 
 @property (nonatomic, assign) NSTimeInterval fadeDuration;
 @property (nonatomic, assign) CGFloat animationPace;
 @property (nonatomic, assign) UIViewAnimationCurve animationCurve;
 @property (nonatomic, assign) BOOL isAnimating;
-@property (nonatomic, strong) NSMutableArray *images;
+@property (nonatomic, strong) NSArray *images;
 
 - (void)pause;
 - (void)resume;

@@ -8,9 +8,9 @@ Usage
 -----
     slideshow = [[SlideshowView alloc] initWithFrame:CGRectMake(0, 0, 320, 420)];
     [slideshow setImages:[NSArray arrayWithObjects:
-                         [UIImage imageNamed:@"1.jpeg"],
-                         [UIImage imageNamed:@"2.jpeg"],
-                         [UIImage imageNamed:@"3.jpeg"],
+                             @"1.jpeg",
+                             @"2.jpeg",
+                             @"3.jpeg",
                          nil]];
 
     // 20 pixels per second
